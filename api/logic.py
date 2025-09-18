@@ -4,6 +4,7 @@ from . import BASE_DIR
 from pathlib import Path
 from werkzeug.utils import secure_filename
 import markdown
+from .config import config_vars
 
 class FileResource(Resource):
     def get(self, path):
@@ -115,7 +116,7 @@ class FolderResource(Resource):
         items = []
         try:
             for item in folder_path.iterdir():
-                if str(item.name).startswith('.'):
+                if not config_vars['show_hidden_files'] and str(item.name).startswith('.'):
                     continue
                 item_type = "folder" if item.is_dir() else "file"
                 item_size = f"{self._bytes_to_megabytes(item.stat().st_size):.2f}"
