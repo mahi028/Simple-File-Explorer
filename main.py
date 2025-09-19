@@ -1,4 +1,4 @@
-"""This application is just a web base file explorer"""
+"97""This application is just a web base file explorer"""
 
 from flask import Flask, render_template, send_from_directory
 from api import api
@@ -29,4 +29,4 @@ def index():
     return render_template("index.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=9876)
