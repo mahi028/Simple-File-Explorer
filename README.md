@@ -65,7 +65,7 @@ Then Visit `http://your-device-ip:9876`
 ## FAQ
 
 * How to get your device ip?
-    It should be visible when you run the application form the terminal. But if not: 
+    It should be visible when you run the application from the terminal. But if not: 
     - On Windows: Run `ipconfig` on your terminal.
     - On Linux: Run `ip address` on your terminal.
 
