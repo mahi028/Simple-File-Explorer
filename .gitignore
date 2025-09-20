@@ -14,3 +14,4 @@ base
 .env
 api/config.py
 prefrences.json
+app.spec
