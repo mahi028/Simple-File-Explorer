@@ -1,11 +1,8 @@
 import os
 import platform
+import json
 from .config import config_vars
-
-user_name = config_vars['OS_USER_NAME']
-if not user_name:
-    raise Exception("Please set you user name in config.py file. See config.example.py for refrence.")
-print('USER Name: ', user_name)
+from pathlib import Path
 
 os_type = platform.system()
 print("OS Type: ", os_type)
@@ -13,19 +10,35 @@ print("OS Type: ", os_type)
 os_info = platform.platform()
 print("OS INFO: ", os_info)
 
+user_directory = Path.home()
+print("User Directory: ", user_directory)
+
 match os_type:
     case 'Windows':
-        root_directory = os.path.abspath(os.sep)
-        print("Root Directory: ", root_directory)
-        user_directory = os.path.join(root_directory, 'users', user_name)
+        appdata = os.path.join(user_directory, 'AppData/Roaming')
     case 'Linux':
-        user_directory = os.path.join('/home', user_name)
+        appdata = os.path.join(user_directory, '.config')
     case 'Darwin':
-        user_directory = os.path.join('/Users', user_name)
+        appdata = os.path.join(user_directory, 'AppData/Roaming')
     case '_':
-        raise Exception("Your OS is not supported for this application Right now!")
+        raise Exception("Your OS is not supported by this application Right now!")
+    
 
-print("User Directory: ", user_directory)
+# Store the config in appdata
+config_dir = os.path.join(appdata, "SFX")
+os.makedirs(config_dir, exist_ok=True)
+
+CONFIG_FILE = os.path.join(config_dir, "config.json")
+
+print('Config File at: ', CONFIG_FILE)
+# if not os.path.exists(CONFIG_FILE):
+#     with open(CONFIG_FILE, "w") as f:
+#         json.dump(config_vars, f)
+# else:
+#     with open(CONFIG_FILE) as f:
+#         config = json.load(f)
+
+
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), user_directory ))
 
