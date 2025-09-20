@@ -15,9 +15,13 @@ Download a release and choose any way you like to run the Application on your ma
 
 **1. Download the latest SFX binary from the release section and run:**
 
+- On Linux, download SFX 
 ```sh
 ./SFX # path to the SFX binary
 ``` 
+
+- On Windows, download SFX.exe and double click to run the app
+
 Then Visit `http://your-device-ip:9876` 
 
 
