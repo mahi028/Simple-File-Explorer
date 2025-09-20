@@ -1,4 +1,4 @@
-"97""This application is just a web base file explorer"""
+"""This application is just a web base file explorer"""
 
 from flask import Flask, render_template, send_from_directory
 from api import api
