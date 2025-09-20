@@ -15,4 +15,5 @@ base
 api/config.py
 prefrences.json
 app.spec
+wsgi.spec
 config.json
