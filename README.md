@@ -1,3 +1,7 @@
+<div align="center">
+    <img width="327" height="240" alt="SFX-text-removebg-preview" src="https://github.com/user-attachments/assets/58d26790-846f-4aa7-8064-8e16fa8aab0a" />
+</div>
+
 # SFX (SIMPLE FILE EXPLORER)
 
 SFX is a web based file explorer written in python and vue.js for smooth file exploration.
