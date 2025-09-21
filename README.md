@@ -69,11 +69,20 @@ Then Visit `http://your-device-ip:9876`
 ## FAQ
 
 * How to get your device ip?
+
     It should be visible when you run the application from the terminal. But if not: 
     - On Windows: Run `ipconfig` on your terminal.
     - On Linux: Run `ip address` on your terminal.
 
-    You are trying to find an address typically starts with 192.168.-.-
+    You are trying to find an ipv4 address that typically starts with 192.168.-.-
+
+* Will the app be visible on internet?
+
+    No. The app is only visible to the devices which are on the same network, e.g., same wifi.
+
+    If you want it to be visible over the internet, you need to forward a port from your router. Or use other services like [ngrok]("https://ngrok.com/our-product/secure-tunnels") to create secure tunnels.
+
+    You can also use services like [Zerotier]("https://my.zerotier.com/") and create a virtual private network by registering your devices there. 
 
 * How to configure the app?
-    - Instructions here
+    - Instructions will be available here
