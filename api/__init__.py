@@ -18,8 +18,8 @@ match os_type:
         appdata = os.path.join(user_directory, 'AppData/Roaming')
     case 'Linux':
         appdata = os.path.join(user_directory, '.config')
-    case 'Darwin':
-        appdata = os.path.join(user_directory, 'AppData/Roaming')
+    # case 'Darwin':
+    #     appdata = os.path.join(user_directory, 'AppData/Roaming')
     case '_':
         raise Exception("Your OS is not supported by this application Right now!")
     
