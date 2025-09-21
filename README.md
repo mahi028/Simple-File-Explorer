@@ -12,6 +12,7 @@ In future, this application is supposed to be a file server which can be accesse
 
 Download a release and choose any way you like to run the Application on your machine
 
+Supported OS includes Windows and Linux
 
 **1. Download the latest SFX binary from the release section and run:**
 
