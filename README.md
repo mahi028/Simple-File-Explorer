@@ -80,9 +80,9 @@ Then Visit `http://your-device-ip:9876`
 
     No. The app is only visible to the devices which are on the same network, e.g., same wifi.
 
-    If you want it to be visible over the internet, you need to forward a port from your router. Or use other services like [ngrok]("https://ngrok.com/our-product/secure-tunnels") to create secure tunnels.
+    If you want it to be visible over the internet, you need to forward a port from your router. Or use other services like [ngrok](https://ngrok.com/our-product/secure-tunnels) to create secure tunnels.
 
-    You can also use services like [Zerotier]("https://my.zerotier.com/") and create a virtual private network by registering your devices there. 
+    You can also use services like [Zerotier](https://my.zerotier.com/) and create a virtual private network by registering your devices there. 
 
 * How to configure the app?
     - Instructions will be available here
