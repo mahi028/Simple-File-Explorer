@@ -1,14 +1,14 @@
+template = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SFX UI</title>
+  <title>SFX</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- {% block head %}{% endblock %} -->
 
   <style>
             .readme-content {
@@ -222,7 +222,7 @@
 
                 <!-- Upload File Form -->
                 <form @submit.prevent="uploadFile">
-                    <label class="form-label fw-bold">Upload File</label>
+                    <label class="form-label fw-bold">Move a File here</label>
                     <div class="mb-3">
                     <input ref="fileInput" 
                             type="file" 
@@ -233,7 +233,7 @@
                     <button type="submit" 
                             class="btn btn-success w-100"
                             :disabled="loading">
-                    <i class="bi bi-cloud-upload"></i> Upload File
+                    <i class="bi bi-cloud-upload"></i> Move File
                     </button>
                 </form>
 
@@ -366,11 +366,11 @@
                                     title="View file">
                             <i class="bi bi-eye"></i>
                             </button>
-                            <button @click.stop="downloadFile(item.name)" 
+                            <!-- <button @click.stop="downloadFile(item.name)" 
                                     class="btn btn-outline-secondary btn-sm" 
                                     title="Download file">
                             <i class="bi bi-download"></i>
-                            </button>
+                            </button> -->
                             <button @click.stop="deleteFile(item.name)" 
                                     class="btn btn-outline-danger btn-sm" 
                                     title="Delete file">
@@ -405,11 +405,11 @@
                                 title="View file">
                         <i class="bi bi-eye"></i>
                         </button>
-                        <button @click.stop="downloadFile(item.name)" 
+                        <!-- <button @click.stop="downloadFile(item.name)" 
                                 class="btn btn-outline-secondary btn-sm" 
                                 title="Download file">
                         <i class="bi bi-download"></i>
-                        </button>
+                        </button> -->
                         <button @click.stop="deleteFile(item.name)" 
                                 class="btn btn-outline-danger btn-sm" 
                                 title="Delete file">
@@ -460,11 +460,11 @@
                                     title="View file">
                                 <i class="bi bi-eye"></i>
                             </button>
-                            <button @click.stop="downloadFile(item.name)" 
+                            <!-- <button @click.stop="downloadFile(item.name)" 
                                     class="btn btn-outline-secondary btn-sm" 
                                     title="Download file">
                                 <i class="bi bi-download"></i>
-                            </button>
+                            </button> -->
                             <button @click.stop="deleteFile(item.name)" 
                                     class="btn btn-outline-danger btn-sm" 
                                     title="Delete file">
@@ -532,7 +532,7 @@
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                <h5 class="modal-title">Upload File</h5>
+                <h5 class="modal-title">Move a file here</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form @submit.prevent="uploadFile">
@@ -549,7 +549,7 @@
                             class="btn btn-success"
                             :disabled="loading"
                             data-bs-dismiss="modal">
-                    Upload
+                    Move
                     </button>
                 </div>
                 </form>
@@ -574,10 +574,36 @@
             </div>
         </div>
     </div>
-    <div class="container-fluid py-2 py-md-4" id="app" v-else>
-        Please wait while application is loading...
+
+    <!-- Backend is loading --> 
+   <div class="container-fluid d-flex flex-column align-items-center justify-content-center min-vh-100 bg-dark" style="overflow: hidden;" id="app" v-else>
+  <!-- ASCII Banner Section -->
+  <div class="card bg-black text-center shadow-lg border-0" style="overflow: hidden;">
+    <div class="card-body" style="overflow: hidden;">
+      <pre class="mb-0" style="font-family: monospace; font-size: 16px; line-height: 1; color:#8a0303; white-space: pre; overflow: hidden; text-align: center;">
+  ██████   █████▒▒██   ██▒
+▒██    ▒ ▓██   ▒ ▒▒ █ █ ▒░
+░ ▓██▄   ▒████ ░ ░░  █   ░
+  ▒   ██▒░▓█▒  ░  ░ █ █ ▒ 
+▒██████▒▒░▒█░    ▒██▒ ▒██▒
+▒ ▒▓▒ ▒ ░ ▒ ░    ▒▒ ░ ░▓ ░
+░ ░▒  ░ ░ ░      ░░   ░▒ ░
+░  ░  ░   ░ ░     ░    ░  
+      ░           ░    ░  
+</pre>
+
+      
+      <!-- Loading indicator -->
+      <div class="mt-4">
+        <div class="spinner-border text-danger" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-light mt-2">Loading application...</p>
+      </div>
     </div>
   </div>
+</div>
+
 
 <!-- VUE.JS SCRIPT SECTION -->
 <script>
@@ -708,10 +734,10 @@ createApp({
           body: formData
         });
         
-        if (!response.ok) throw new Error('Failed to upload file');
+        if (!response.ok) throw new Error('Failed to Move file');
         
         const data = await response.json();
-        this.showToast(data.message || 'File uploaded successfully', 'success');
+        this.showToast(data.message || 'File Moved successfully', 'success');
         fileInput.value = '';
         await this.loadFolder();
       } catch (error) {
@@ -850,3 +876,5 @@ createApp({
 </script>
 </body>
 </html>
+
+"""

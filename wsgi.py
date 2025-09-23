@@ -5,6 +5,7 @@ from waitress import serve
 from webui import webui
 from app import app
 import threading
+from webuiTemplate import template
 
 LOACL_HOST = "127.0.0.1"
 OPEN_HOST = "0.0.0.0"
@@ -20,9 +21,9 @@ if __name__ == "__main__":
     print(f"Visit app on network: http://your-device-ip:{BACKEND_PORT}/")
     print("Note: Closing the UI window doesn't stop the application.")
     print("Note: Press \"CTRL + C\" to terminate the app.")
-    # Open the web browser
     
-    web_window.show("./templates/webuiIndex.html")
+    # Open the web window
+    web_window.show(template)
     threading.Timer(0.5, lambda: webui.wait()).start()
     
     # Serve the app
