@@ -28,6 +28,10 @@ api.init_app(app)
 def index():
     return render_template("index.html")
 
+@app.route("/player")
+def media_player():
+    return render_template("mediaPlayer.html")
+
 @app.route("/health")
 def health():
     return {"msg":"Backend Running"}

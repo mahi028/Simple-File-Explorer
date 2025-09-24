@@ -1,0 +1,713 @@
+{% extends 'base.html' %}
+{% block title %}Media Player - SFX{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3" id="mediaPlayer">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+          <button @click="goBack" class="btn btn-outline-secondary me-3">
+            <i class="bi bi-arrow-left"></i> Back
+          </button>
+          <h2 class="mb-0">
+            <i class="bi bi-play-circle-fill text-primary"></i>
+            <span class="d-none d-md-inline">Media Player</span>
+            <span class="d-md-none">Player</span>
+          </h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Media Player Container -->
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+      <div class="card shadow-lg border-0">
+        <!-- Media Info Header -->
+        <div class="card-header bg-dark text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i :class="mediaIcon" class="me-2"></i>
+              <div>
+                <h5 class="mb-0 text-truncate" style="max-width: 300px;">{{ fileName }}</h5>
+                <small class="text-muted">{{ mediaType }} • {{ formatFileSize(fileSize) }}</small>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span v-if="duration" class="badge bg-secondary">{{ formatTime(duration) }}</span>
+              <button @click="toggleMute" class="btn btn-sm btn-outline-light">
+                <i :class="isMuted ? 'bi bi-volume-mute' : 'bi bi-volume-up'"></i>
+              </button>
+              <!-- Keyboard Controls Help Button -->
+              <button @click="showKeyboardHelp = !showKeyboardHelp" 
+                      class="btn btn-sm btn-outline-light"
+                      title="Show keyboard shortcuts (H)">
+                <i class="bi bi-keyboard"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Keyboard Help Tooltip -->
+          <div v-show="showKeyboardHelp" class="mt-3 p-3 bg-secondary rounded">
+            <h6 class="mb-2">Keyboard Shortcuts:</h6>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <small>
+                  <kbd>Space</kbd> / <kbd>K</kbd> - Play/Pause<br>
+                  <kbd>←</kbd> / <kbd>J</kbd> - Seek backward (10s)<br>
+                  <kbd>→</kbd> / <kbd>L</kbd> - Seek forward (10s)<br>
+                  <kbd>M</kbd> - Toggle mute<br>
+                  <kbd>F</kbd> - Toggle fullscreen
+                </small>
+              </div>
+              <div class="col-md-6">
+                <small>
+                  <kbd>↑</kbd> - Volume up (+5%)<br>
+                  <kbd>↓</kbd> - Volume down (-5%)<br>
+                  <kbd>D</kbd> - Download media<br>
+                  <kbd>1-4</kbd> - Playback speed<br>
+                  <kbd>Esc</kbd> - Exit fullscreen/Close help
+                </small>
+              </div>
+            </div>
+            <small class="text-light d-block mt-2">
+              <i class="bi bi-info-circle"></i> Click anywhere on the player to focus for keyboard controls
+            </small>
+          </div>
+        </div>
+
+        <!-- Media Player -->
+        <div class="card-body p-0 bg-black position-relative">
+          <div v-if="loading" class="d-flex justify-content-center align-items-center" style="height: 400px;">
+            <div class="text-center text-white">
+              <div class="spinner-border mb-3" role="status"></div>
+              <p>Loading media...</p>
+            </div>
+          </div>
+
+          <!-- Video Player -->
+          <video v-if="mediaType === 'video'" 
+                 ref="mediaPlayer"
+                 class="w-100"
+                 style="max-height: 70vh;"
+                 :src="mediaUrl"
+                 @loadedmetadata="onMediaLoaded"
+                 @timeupdate="onTimeUpdate"
+                 @ended="onMediaEnded"
+                 @play="isPlaying = true"
+                 @pause="isPlaying = false"
+                 @loadstart="loading = true"
+                 @canplay="loading = false"
+                 preload="metadata">
+            Your browser does not support video playback.
+          </video>
+
+          <!-- Audio Player -->
+          <div v-else-if="mediaType === 'audio'" class="audio-player-container">
+            <audio ref="mediaPlayer"
+                   :src="mediaUrl"
+                   @loadedmetadata="onMediaLoaded"
+                   @timeupdate="onTimeUpdate"
+                   @ended="onMediaEnded"
+                   @play="isPlaying = true"
+                   @pause="isPlaying = false"
+                   @loadstart="loading = true"
+                   @canplay="loading = false"
+                   preload="metadata">
+              Your browser does not support audio playback.
+            </audio>
+
+            <!-- Custom Audio Visualizer -->
+            <div class="audio-visualizer bg-gradient" style="height: 300px;">
+              <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="text-center text-white">
+                  <i class="bi bi-music-note-beamed display-1 mb-3"></i>
+                  <h4>{{ fileName }}</h4>
+                  <div class="audio-waveform">
+                    <div class="wave-bar" v-for="i in 20" :key="i" 
+                         :style="{ height: Math.random() * 50 + 10 + 'px', 
+                                   animationDelay: i * 0.1 + 's',
+                                   animationPlayState: isPlaying ? 'running' : 'paused' }">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Unsupported Media -->
+          <div v-else class="d-flex justify-content-center align-items-center text-white" style="height: 300px;">
+            <div class="text-center">
+              <i class="bi bi-file-x display-1 mb-3 text-muted"></i>
+              <h4>Unsupported Media Format</h4>
+              <p class="text-muted">This file format is not supported for playback</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Controls -->
+        <div class="card-footer bg-dark text-white">
+          <div class="row align-items-center g-3">
+            <!-- Play Controls -->
+            <div class="col-auto">
+              <div class="btn-group" role="group">
+                <button @click="seekBackward" class="btn btn-outline-light btn-sm" title="Seek backward 10s (J / ←)">
+                  <i class="bi bi-skip-backward"></i>
+                </button>
+                <button @click="togglePlayPause" class="btn btn-primary btn-sm" title="Play/Pause (Space / K)">
+                  <i :class="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+                </button>
+                <button @click="seekForward" class="btn btn-outline-light btn-sm" title="Seek forward 10s (L / →)">
+                  <i class="bi bi-skip-forward"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="col">
+              <div class="d-flex align-items-center gap-2">
+                <small>{{ formatTime(currentTime) }}</small>
+                <div class="progress flex-grow-1" style="height: 6px; cursor: pointer;" @click="seekToPosition" title="Click to seek">
+                  <div class="progress-bar bg-primary" 
+                       :style="{ width: progressPercent + '%' }"
+                       role="progressbar">
+                  </div>
+                </div>
+                <small>{{ formatTime(duration) }}</small>
+              </div>
+            </div>
+
+            <!-- Volume Control -->
+            <div class="col-auto d-none d-md-block">
+              <div class="d-flex align-items-center gap-2">
+                <i :class="isMuted ? 'bi bi-volume-mute' : 'bi bi-volume-up'" 
+                   style="width: 20px;" title="Volume (M to mute, ↑↓ to adjust)"></i>
+                <input type="range" 
+                       class="form-range" 
+                       style="width: 80px;"
+                       min="0" 
+                       max="100" 
+                       v-model="volume"
+                       @input="setVolume"
+                       title="Volume slider">
+              </div>
+            </div>
+
+            <!-- Speed Control -->
+            <div class="col-auto d-none d-lg-block">
+              <div class="dropdown">
+                <button class="btn btn-outline-light btn-sm dropdown-toggle" 
+                        type="button" 
+                        data-bs-toggle="dropdown"
+                        title="Playback speed (1-4 keys)">
+                  {{ playbackRate }}x
+                </button>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                  <li><a class="dropdown-item" href="#" @click="setPlaybackRate(0.5)">0.5x</a></li>
+                  <li><a class="dropdown-item" href="#" @click="setPlaybackRate(0.75)">0.75x</a></li>
+                  <li><a class="dropdown-item" href="#" @click="setPlaybackRate(1)">1x <kbd>1</kbd></a></li>
+                  <li><a class="dropdown-item" href="#" @click="setPlaybackRate(1.25)">1.25x <kbd>2</kbd></a></li>
+                  <li><a class="dropdown-item" href="#" @click="setPlaybackRate(1.5)">1.5x <kbd>3</kbd></a></li>
+                  <li><a class="dropdown-item" href="#" @click="setPlaybackRate(2)">2x <kbd>4</kbd></a></li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Fullscreen & Download Buttons -->
+            <div class="col-auto">
+              <div class="d-flex gap-2">
+                <button @click="toggleFullscreen" class="btn btn-outline-light btn-sm" title="Fullscreen (F)">
+                  <i class="bi bi-fullscreen"></i>
+                  <span class="d-none d-xl-inline ms-1">Fullscreen</span>
+                </button>
+                <button @click="downloadMedia" class="btn btn-outline-success btn-sm" title="Download (D)">
+                  <i class="bi bi-download"></i>
+                  <span class="d-none d-xl-inline ms-1">Download</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Media Information Panel -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-lg-10 col-xl-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="bi bi-info-circle"></i> Media Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-sm table-borderless">
+                <tr>
+                  <td class="fw-bold">Filename:</td>
+                  <td class="text-break">{{ fileName }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold">Type:</td>
+                  <td>{{ mediaType || 'Unknown' }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold">Duration:</td>
+                  <td>{{ duration ? formatTime(duration) : 'Unknown' }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-sm table-borderless">
+                <tr>
+                  <td class="fw-bold">File Size:</td>
+                  <td>{{ formatFileSize(fileSize) }}</td>
+                </tr>
+                <tr v-if="videoWidth && videoHeight">
+                  <td class="fw-bold">Resolution:</td>
+                  <td>{{ videoWidth }} x {{ videoHeight }}</td>
+                </tr>
+                <tr>
+                  <td class="fw-bold">Format:</td>
+                  <td>{{ fileExtension.toUpperCase() }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.audio-player-container {
+  position: relative;
+}
+
+.audio-visualizer {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.audio-waveform {
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  gap: 2px;
+  height: 60px;
+  margin-top: 20px;
+}
+
+.wave-bar {
+  width: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  animation: wave 1s infinite ease-in-out;
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.progress {
+  transition: all 0.2s ease;
+}
+
+.progress:hover {
+  height: 8px !important;
+}
+
+.btn-group .btn {
+  min-width: 40px;
+}
+
+/* Keyboard shortcuts tooltip */
+kbd {
+  background-color: #212529;
+  border: 1px solid #495057;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 0.8em;
+  color: white;
+  font-family: monospace;
+}
+
+/* Player focus indicator */
+#mediaPlayer:focus-within {
+  outline: 2px solid rgba(13, 110, 253, 0.5);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Volume indicator */
+.volume-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  z-index: 9999;
+  font-size: 1.2rem;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .audio-waveform {
+    height: 40px;
+  }
+  
+  .wave-bar {
+    width: 3px;
+  }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      fileName: '',
+      mediaUrl: '',
+      mediaType: '',
+      fileSize: 0,
+      fileExtension: '',
+      duration: 0,
+      currentTime: 0,
+      isPlaying: false,
+      isMuted: false,
+      volume: 100,
+      playbackRate: 1,
+      loading: true,
+      videoWidth: 0,
+      videoHeight: 0,
+      showKeyboardHelp: false
+    };
+  },
+  computed: {
+    mediaIcon() {
+      return this.mediaType === 'video' ? 'bi bi-camera-video-fill' : 'bi bi-music-note-beamed';
+    },
+    progressPercent() {
+      return this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
+    }
+  },
+  mounted() {
+    this.initializePlayer();
+    this.setupKeyboardControls();
+  },
+  beforeUnmount() {
+    this.removeKeyboardControls();
+  },
+  methods: {
+    initializePlayer() {
+      // Get file path from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const filePath = urlParams.get('file');
+      
+      if (!filePath) {
+        this.goBack();
+        return;
+      }
+      
+      this.fileName = filePath.split('/').pop();
+      this.fileExtension = this.fileName.split('.').pop().toLowerCase();
+      this.mediaUrl = `/bucket/file/${filePath}`;
+      this.mediaType = this.getMediaType(this.fileExtension);
+      
+      // Simulate file size (in a real app, you'd get this from the server)
+      this.fileSize = Math.random() * 10000000; // Random size for demo
+    },
+
+    setupKeyboardControls() {
+      // Add keyboard event listener to document
+      document.addEventListener('keydown', this.handleKeydown);
+      
+      // Make the player container focusable for keyboard events
+      this.$nextTick(() => {
+        const playerElement = document.getElementById('mediaPlayer');
+        if (playerElement) {
+          playerElement.setAttribute('tabindex', '0');
+          playerElement.addEventListener('keydown', this.handleKeydown);
+          playerElement.focus();
+        }
+      });
+    },
+
+    removeKeyboardControls() {
+      document.removeEventListener('keydown', this.handleKeydown);
+      if (this.$el) {
+        this.$el.removeEventListener('keydown', this.handleKeydown);
+      }
+    },
+
+    handleKeydown(event) {
+      // Prevent default behavior for media keys
+      const mediaKeys = ['Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyK', 'KeyJ', 'KeyL', 'KeyM', 'KeyF', 'KeyD', 'KeyH'];
+      if (mediaKeys.includes(event.code)) {
+        event.preventDefault();
+      }
+
+      switch (event.code) {
+        case 'Space':
+        case 'KeyK':
+          this.togglePlayPause();
+          break;
+        
+        case 'ArrowLeft':
+        case 'KeyJ':
+          this.seekBackward();
+          break;
+        
+        case 'ArrowRight':
+        case 'KeyL':
+          this.seekForward();
+          break;
+        
+        case 'ArrowUp':
+          this.adjustVolume(5);
+          break;
+        
+        case 'ArrowDown':
+          this.adjustVolume(-5);
+          break;
+        
+        case 'KeyM':
+          this.toggleMute();
+          break;
+        
+        case 'KeyF':
+          this.toggleFullscreen();
+          break;
+        
+        case 'KeyD':
+          this.downloadMedia();
+          break;
+        
+        case 'Digit1':
+          this.setPlaybackRate(1);
+          break;
+        
+        case 'Digit2':
+          this.setPlaybackRate(1.25);
+          break;
+        
+        case 'Digit3':
+          this.setPlaybackRate(1.5);
+          break;
+        
+        case 'Digit4':
+          this.setPlaybackRate(2);
+          break;
+        
+        case 'Escape':
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          }
+          this.showKeyboardHelp = false;
+          break;
+        
+        case 'KeyH':
+        case 'Slash':
+          this.showKeyboardHelp = !this.showKeyboardHelp;
+          break;
+      }
+    },
+
+    adjustVolume(change) {
+      const newVolume = Math.max(0, Math.min(100, this.volume + change));
+      this.volume = newVolume;
+      this.setVolume();
+      
+      // Show temporary volume indicator
+      this.showVolumeIndicator(newVolume);
+    },
+
+    showVolumeIndicator(volume) {
+      // Remove existing indicator
+      const existing = document.querySelector('.volume-indicator');
+      if (existing) {
+        existing.remove();
+      }
+
+      // Create temporary volume indicator
+      const indicator = document.createElement('div');
+      indicator.className = 'volume-indicator';
+      indicator.innerHTML = `<i class="bi bi-volume-up"></i> ${volume}%`;
+      
+      document.body.appendChild(indicator);
+      
+      setTimeout(() => {
+        if (indicator.parentNode) {
+          indicator.remove();
+        }
+      }, 1500);
+    },
+
+    getMediaType(extension) {
+      const videoFormats = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'flv', 'mkv'];
+      const audioFormats = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'];
+      
+      if (videoFormats.includes(extension)) return 'video';
+      if (audioFormats.includes(extension)) return 'audio';
+      return 'unknown';
+    },
+
+    onMediaLoaded() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        this.duration = player.duration;
+        this.videoWidth = player.videoWidth || 0;
+        this.videoHeight = player.videoHeight || 0;
+        this.loading = false;
+        
+        // Initialize volume
+        player.volume = this.volume / 100;
+      }
+    },
+
+    onTimeUpdate() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        this.currentTime = player.currentTime;
+      }
+    },
+
+    onMediaEnded() {
+      this.isPlaying = false;
+      this.currentTime = 0;
+    },
+
+    togglePlayPause() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        if (this.isPlaying) {
+          player.pause();
+        } else {
+          // Handle play promise for modern browsers
+          const playPromise = player.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log('Playback started successfully');
+            }).catch(error => {
+              console.error('Playback failed:', error);
+              this.showToast('Playback failed: ' + error.message, 'error');
+            });
+          }
+        }
+      }
+    },
+
+    toggleMute() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        player.muted = !player.muted;
+        this.isMuted = player.muted;
+      }
+    },
+
+    setVolume() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        player.volume = this.volume / 100;
+        this.isMuted = player.volume === 0;
+      }
+    },
+
+    setPlaybackRate(rate) {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        player.playbackRate = rate;
+        this.playbackRate = rate;
+      }
+    },
+
+    seekToPosition(event) {
+      const player = this.$refs.mediaPlayer;
+      if (player && this.duration > 0) {
+        const rect = event.target.closest('.progress').getBoundingClientRect();
+        const percent = (event.clientX - rect.left) / rect.width;
+        player.currentTime = percent * this.duration;
+      }
+    },
+
+    seekForward() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        player.currentTime = Math.min(player.currentTime + 10, this.duration);
+      }
+    },
+
+    seekBackward() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        player.currentTime = Math.max(player.currentTime - 10, 0);
+      }
+    },
+
+    toggleFullscreen() {
+      const player = this.$refs.mediaPlayer;
+      if (player) {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        } else if (player.requestFullscreen) {
+          player.requestFullscreen();
+        }
+      }
+    },
+
+    downloadMedia() {
+      window.open(this.mediaUrl, '_blank');
+    },
+
+    goBack() {
+      window.history.back();
+    },
+
+    // Add toast method for error messages
+    showToast(message, type = 'info') {
+      // Create a simple toast notification
+      const toast = document.createElement('div');
+      toast.className = `position-fixed top-0 end-0 m-3 alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+      toast.style.zIndex = '9999';
+      toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      document.body.appendChild(toast);
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, 5000);
+    },
+
+    formatTime(seconds) {
+      if (!seconds || isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    },
+
+    formatFileSize(bytes) {
+      if (!bytes) return 'Unknown';
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+    }
+  }
+}).mount('#mediaPlayer');
+</script>
+{% endblock %}
+

@@ -724,8 +724,20 @@ createApp({
 
     viewFile(filename) {
       const path = this.currentPath ? `${this.currentPath}/${filename}` : filename;
-      const url = `/bucket/file/${path}?view=true`;
-      window.open(url, '_blank');
+      const ext = filename.split('.').pop().toLowerCase();
+      
+      // Check if it's a media file
+      const videoFormats = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'flv', 'mkv'];
+      const audioFormats = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'];
+      
+      if (videoFormats.includes(ext) || audioFormats.includes(ext)) {
+        // Navigate to media player
+        window.location.href = `/player?file=${encodeURIComponent(path)}`;
+      } else {
+        // Open other files directly
+        const url = `/bucket/file/${path}?view=true`;
+        window.open(url, '_blank');
+      }
     },
 
     showToast(message, type) {
