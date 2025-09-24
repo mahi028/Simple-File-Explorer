@@ -5,13 +5,10 @@ from .config import config_vars
 from pathlib import Path
 
 os_type = platform.system()
-print("OS Type: ", os_type)
 
 os_info = platform.platform()
-print("OS INFO: ", os_info)
 
 user_directory = Path.home()
-print("User Directory: ", user_directory)
 
 match os_type:
     case 'Windows':
@@ -30,7 +27,6 @@ os.makedirs(config_dir, exist_ok=True)
 
 CONFIG_FILE = os.path.join(config_dir, "config.json")
 
-print('Config File at: ', CONFIG_FILE)
 # if not os.path.exists(CONFIG_FILE):
 #     with open(CONFIG_FILE, "w") as f:
 #         json.dump(config_vars, f)
