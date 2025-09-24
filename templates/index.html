@@ -275,7 +275,7 @@
                             title="View file">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button @click.stop="downloadFile(item.name)" 
+                    <button v-if="!webUI" @click.stop="downloadFile(item.name)" 
                             class="btn btn-outline-secondary btn-sm" 
                             title="Download file">
                       <i class="bi bi-download"></i>
@@ -314,7 +314,7 @@
                         title="View file">
                   <i class="bi bi-eye"></i>
                 </button>
-                <button @click.stop="downloadFile(item.name)" 
+                <button v-if="!webUI" @click.stop="downloadFile(item.name)" 
                         class="btn btn-outline-secondary btn-sm" 
                         title="Download file">
                   <i class="bi bi-download"></i>
@@ -369,7 +369,7 @@
                               title="View file">
                         <i class="bi bi-eye"></i>
                       </button>
-                      <button @click.stop="downloadFile(item.name)" 
+                      <button v-if="!webUI" @click.stop="downloadFile(item.name)" 
                               class="btn btn-outline-secondary btn-sm" 
                               title="Download file">
                         <i class="bi bi-download"></i>
@@ -554,7 +554,10 @@ createApp({
       loading: false,
       toasts: [],
       readmeContent: null,
-      currentView: 'grid' // Default view
+      currentView: 'grid',
+      host: '[[host]]',
+      port: [[port]],
+      webUI: [[webUI|lower]]
     };
   },
   computed: {
@@ -588,7 +591,7 @@ createApp({
       this.loading = true;
       try {
         const path = this.currentPath || '';
-        const response = await fetch(`/bucket/folder/${path}`);
+        const response = await fetch(`http://${this.host}:${this.port}/bucket/folder/${path}`);
         if (!response.ok) throw new Error('Failed to fetch files');
         
         const data = await response.json();
@@ -615,7 +618,7 @@ createApp({
           ? `${this.currentPath}/${this.newFolderName}` 
           : this.newFolderName;
         
-        const response = await fetch(`/bucket/folder/${folderPath}`, {
+        const response = await fetch(`http://${this.host}:${this.port}/bucket/folder/${folderPath}`, {
           method: 'POST'
         });
         
@@ -644,7 +647,7 @@ createApp({
         
         const uploadPath = this.currentPath || '';
         
-        const response = await fetch(`/bucket/file/${uploadPath}`, {
+        const response = await fetch(`http://${this.host}:${this.port}/bucket/file/${uploadPath}`, {
           method: 'POST',
           body: formData
         });
@@ -702,13 +705,13 @@ createApp({
 
     async downloadFile(filename) {
       const path = this.currentPath ? `${this.currentPath}/${filename}` : filename;
-      const url = `/bucket/file/${path}`;
+      const url = `http://${this.host}:${this.port}/bucket/file/${path}`;
       window.open(url, '_blank');
     },
 
     async deleteFile(filename) {
       const path = this.currentPath ? `${this.currentPath}/${filename}` : filename;
-      const url = `/bucket/file/${path}`;
+      const url = `http://${this.host}:${this.port}/bucket/file/${path}`;
       try {
         const response = await fetch(url, {method:'delete'});
         if (!response.ok) throw new Error('Failed to delete files');
@@ -732,10 +735,10 @@ createApp({
       
       if (videoFormats.includes(ext) || audioFormats.includes(ext)) {
         // Navigate to media player
-        window.location.href = `/player?file=${encodeURIComponent(path)}`;
+        window.location.href = `http://${this.host}:${this.port}/player?file=${encodeURIComponent(path)}`;
       } else {
         // Open other files directly
-        const url = `/bucket/file/${path}?view=true`;
+        const url = `http://${this.host}:${this.port}/bucket/file/${path}?view=true`;
         window.open(url, '_blank');
       }
     },

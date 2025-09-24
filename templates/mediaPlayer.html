@@ -222,7 +222,7 @@
                   <i class="bi bi-fullscreen"></i>
                   <span class="d-none d-xl-inline ms-1">Fullscreen</span>
                 </button>
-                <button @click="downloadMedia" class="btn btn-outline-success btn-sm" title="Download (D)">
+                <button v-if="!webUI" @click="downloadMedia" class="btn btn-outline-success btn-sm" title="Download (D)">
                   <i class="bi bi-download"></i>
                   <span class="d-none d-xl-inline ms-1">Download</span>
                 </button>
@@ -390,7 +390,10 @@ createApp({
       loading: true,
       videoWidth: 0,
       videoHeight: 0,
-      showKeyboardHelp: false
+      showKeyboardHelp: false,
+      host: '[[host]]',
+      port: [[port]],
+      webUI: [[webUI|lower]]
     };
   },
   computed: {
@@ -421,7 +424,7 @@ createApp({
       
       this.fileName = filePath.split('/').pop();
       this.fileExtension = this.fileName.split('.').pop().toLowerCase();
-      this.mediaUrl = `/bucket/file/${filePath}`;
+      this.mediaUrl = `http://${this.host}:${this.port}/bucket/file/${filePath}`;
       this.mediaType = this.getMediaType(this.fileExtension);
       
       // Simulate file size (in a real app, you'd get this from the server)
@@ -666,7 +669,9 @@ createApp({
     },
 
     downloadMedia() {
-      window.open(this.mediaUrl, '_blank');
+      if (!this.webUI) {
+        window.open(this.mediaUrl, '_blank');
+      }
     },
 
     goBack() {
