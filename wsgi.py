@@ -15,7 +15,7 @@ def run_webui(webui_html):
     webui.wait()
 
 def run_backend():
-    serve(app, host=HOST, port=PORT)
+    serve(app, host=HOST, port=PORT, threads=8, max_request_body_size=2**60 - 1)
 
 def print_info():
     print(banner)

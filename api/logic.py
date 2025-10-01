@@ -156,3 +156,40 @@ class FolderResource(Resource):
         if bytes_value < 0:
             raise ValueError("Bytes value cannot be negative.")
         return bytes_value / (1024 * 1024)
+
+class FileInfoResource(Resource):
+    def get(self, path):
+        """Returns file information including size for the specified path."""
+        file_path = self._get_safe_path(path)
+        
+        if not file_path.is_file():
+            abort(404, description="File not found.")
+        
+        try:
+            file_stat = file_path.stat()
+            return {
+                "name": file_path.name,
+                "size": file_stat.st_size,
+                "size_mb": self._bytes_to_megabytes(file_stat.st_size),
+                "path": path,
+                "exists": True
+            }
+        except OSError:
+            abort(500, description="Failed to get file information.")
+    
+    def _get_safe_path(self, *path_parts):
+        """Creates a safe path within BASE_DIR to prevent directory traversal."""
+        # Join path parts and resolve to prevent directory traversal
+        full_path = Path(BASE_DIR).joinpath(*path_parts).resolve()
+        
+        # Ensure the path is within BASE_DIR
+        if not str(full_path).startswith(str(Path(BASE_DIR).resolve())):
+            abort(400, description="Invalid path.")
+        
+        return full_path
+    
+    def _bytes_to_megabytes(self, bytes_value):
+        """Converts a given value in bytes to megabytes."""
+        if bytes_value < 0:
+            raise ValueError("Bytes value cannot be negative.")
+        return bytes_value / (1024 * 1024)

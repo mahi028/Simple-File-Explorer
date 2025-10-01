@@ -44,6 +44,7 @@ api = Api()
 
 # Route registration for Flask-RESTful
 api.add_resource(FileResource, '/bucket/file/<path:path>')
+api.add_resource(FileInfoResource, '/bucket/info/<path:path>')
 api.add_resource(FolderResource, '/bucket/folder/', '/bucket/folder/<path:path>')
 
 

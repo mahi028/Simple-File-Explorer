@@ -449,8 +449,11 @@
             <input ref="mobileFileInput" 
                    type="file" 
                    class="form-control"
+                   accept="*/*"
                    :disabled="loading"
+                   @change="handleMobileFileSelect"
                    required>
+            <small class="text-muted mt-2 d-block">Select a file to upload to the current folder</small>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -465,6 +468,10 @@
       </div>
     </div>
   </div>
+
+
+
+
 
   <!-- Toast Notifications -->
   <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -484,6 +491,70 @@
   </div>
 </div>
 
+<!-- Upload Progress Dialog -->
+<!-- Upload Progress Dialog -->
+<div v-if="uploadProgress.show" class="progress-dialog-container">
+  <div class="progress-dialog">
+    <div class="progress-dialog-header">
+      <i class="bi bi-cloud-upload text-primary me-2"></i>
+      <span>Uploading File</span>
+      <button @click="cancelUpload" class="btn btn-sm btn-outline-secondary ms-auto" title="Cancel">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="progress-dialog-body">
+      <div class="mb-2">
+        <small class="text-muted d-block mb-1 text-truncate">{{ uploadProgress.fileName }}</small>
+        <div class="progress mb-2" style="height: 10px; border-radius: 6px; background-color: #f8f9fa;">
+          <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" 
+               style="border-radius: 6px;"
+               :style="{width: uploadProgress.progress + '%'}"></div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between small text-muted">
+        <span class="fw-medium">{{ uploadProgress.progress }}%</span>
+        <span>{{ formatSpeed(uploadProgress.speed) }}</span>
+      </div>
+      <div class="d-flex justify-content-between small text-muted mt-1">
+        <span>{{ formatBytes(uploadProgress.loaded) }} / {{ formatBytes(uploadProgress.total) }}</span>
+        <span v-if="uploadProgress.speed > 0">{{ formatTimeRemaining(uploadProgress.total - uploadProgress.loaded, uploadProgress.speed) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Download Progress Dialog -->
+<div v-if="downloadProgress.show" class="progress-dialog-container">
+  <div class="progress-dialog">
+    <div class="progress-dialog-header">
+      <i class="bi bi-cloud-download text-success me-2"></i>
+      <span>Downloading File</span>
+      <button @click="cancelDownload" class="btn btn-sm btn-outline-secondary ms-auto" title="Cancel">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="progress-dialog-body">
+      <div class="mb-2">
+        <small class="text-muted d-block mb-1 text-truncate">{{ downloadProgress.fileName }}</small>
+        <div class="progress mb-2" style="height: 10px; border-radius: 6px; background-color: #f8f9fa;">
+          <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+               style="border-radius: 6px;"
+               :style="{width: downloadProgress.progress + '%'}"></div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between small text-muted">
+        <span class="fw-medium">{{ downloadProgress.progress }}%</span>
+        <span>{{ formatSpeed(downloadProgress.speed) }}</span>
+      </div>
+      <div class="d-flex justify-content-between small text-muted mt-1">
+        <span>{{ formatBytes(downloadProgress.loaded) }} / {{ formatBytes(downloadProgress.total) }}</span>
+        <span v-if="downloadProgress.speed > 0">{{ formatTimeRemaining(downloadProgress.total - downloadProgress.loaded, downloadProgress.speed) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block style %}
 <style>
 .file-card {
   cursor: pointer;
@@ -507,6 +578,54 @@
   color: #0a58ca;
 }
 
+/* Progress Dialog */
+.progress-dialog-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.progress-dialog {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 320px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  animation: dialogSlideIn 0.3s ease-out;
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.progress-dialog-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f2937;
+}
+
+.progress-dialog-body {
+  margin-top: 0;
+}
+
 /* Mobile optimizations */
 @media (max-width: 768px) {
   .container-fluid {
@@ -525,6 +644,10 @@
   .table td, .table th {
     padding: 0.5rem;
     font-size: 0.9rem;
+  }
+  
+  .progress-dialog {
+    width: 280px;
   }
 }
 
@@ -557,7 +680,27 @@ createApp({
       currentView: 'grid',
       host: '[[host]]',
       port: [[port]],
-      webUI: [[webUI|lower]]
+      webUI: [[webUI|lower]],
+      uploadProgress: {
+        show: false,
+        progress: 0,
+        speed: 0,
+        fileName: '',
+        loaded: 0,
+        total: 0,
+        startTime: null
+      },
+      downloadProgress: {
+        show: false,
+        progress: 0,
+        speed: 0,
+        fileName: '',
+        loaded: 0,
+        total: 0,
+        startTime: null
+      },
+      currentUploadXHR: null,
+      currentDownloadController: null
     };
   },
   computed: {
@@ -637,32 +780,99 @@ createApp({
 
     async uploadFile() {
       const fileInput = this.$refs.fileInput || this.$refs.mobileFileInput;
-      if (!fileInput.files.length) return;
       
-      this.loading = true;
-      try {
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-        
+      if (!fileInput || !fileInput.files.length) {
+        this.showToast('Please select a file to upload', 'error');
+        return;
+      }
+      
+      const file = fileInput.files[0];
+      
+      // Close any open modals first
+      const modals = document.querySelectorAll('.modal.show');
+      modals.forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) modalInstance.hide();
+      });
+      
+      // Initialize progress tracking
+      this.uploadProgress = {
+        show: true,
+        progress: 0,
+        speed: 0,
+        fileName: file.name,
+        loaded: 0,
+        total: file.size,
+        startTime: Date.now()
+      };
+      
+      // Force Vue to update the DOM
+      await this.$nextTick();
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      return new Promise((resolve, reject) => {
         const uploadPath = this.currentPath || '';
         
-        const response = await fetch(`http://${this.host}:${this.port}/bucket/file/${uploadPath}`, {
-          method: 'POST',
-          body: formData
+        // Use XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+        this.currentUploadXHR = xhr;
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const loaded = event.loaded;
+            const total = event.total;
+            const progress = Math.round((loaded / total) * 100);
+            const elapsed = (Date.now() - this.uploadProgress.startTime) / 1000;
+            const speed = elapsed > 0 ? loaded / elapsed : 0;
+            
+            this.uploadProgress.progress = progress;
+            this.uploadProgress.loaded = loaded;
+            this.uploadProgress.speed = speed;
+          }
         });
         
-        if (!response.ok) throw new Error('Failed to upload file');
+        // Handle completion
+        xhr.addEventListener('load', async () => {
+          try {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const data = JSON.parse(xhr.responseText);
+              this.showToast(data.message || 'File uploaded successfully', 'success');
+              fileInput.value = '';
+              await this.loadFolder();
+              resolve(data);
+            } else {
+              throw new Error('Upload failed with status: ' + xhr.status);
+            }
+          } catch (error) {
+            this.showToast('Failed to process upload response: ' + error.message, 'error');
+            reject(error);
+          } finally {
+            this.uploadProgress.show = false;
+            this.currentUploadXHR = null;
+          }
+        });
         
-        const data = await response.json();
-        this.showToast(data.message || 'File uploaded successfully', 'success');
-        fileInput.value = '';
-        await this.loadFolder();
-      } catch (error) {
-        this.showToast('Failed to upload file: ' + error.message, 'error');
-      } finally {
-        this.loading = false;
-      }
+        xhr.addEventListener('error', () => {
+          this.showToast('Failed to upload file', 'error');
+          this.uploadProgress.show = false;
+          this.currentUploadXHR = null;
+          reject(new Error('Upload failed'));
+        });
+        
+        xhr.addEventListener('abort', () => {
+          this.showToast('Upload was cancelled', 'error');
+          this.uploadProgress.show = false;
+          this.currentUploadXHR = null;
+          reject(new Error('Upload cancelled'));
+        });
+        
+        // Send request
+        xhr.open('POST', `http://${this.host}:${this.port}/bucket/file/${uploadPath}`);
+        xhr.send(formData);
+      });
     },
 
     handleItemClick(item) {
@@ -706,7 +916,75 @@ createApp({
     async downloadFile(filename) {
       const path = this.currentPath ? `${this.currentPath}/${filename}` : filename;
       const url = `http://${this.host}:${this.port}/bucket/file/${path}`;
-      window.open(url, '_blank');
+      
+      // Initialize download progress
+      this.downloadProgress = {
+        show: true,
+        progress: 0,
+        speed: 0,
+        fileName: filename,
+        loaded: 0,
+        total: 0,
+        startTime: Date.now()
+      };
+      
+      try {
+        // Create AbortController for cancellation
+        this.currentDownloadController = new AbortController();
+        
+        // Fetch with progress tracking
+        const response = await fetch(url, {
+          signal: this.currentDownloadController.signal
+        });
+        if (!response.ok) throw new Error('Download failed');
+        
+        const contentLength = response.headers.get('content-length');
+        const total = parseInt(contentLength, 10);
+        this.downloadProgress.total = total;
+        
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          chunks.push(value);
+          loaded += value.length;
+          
+          const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
+          const elapsed = (Date.now() - this.downloadProgress.startTime) / 1000;
+          const speed = elapsed > 0 ? loaded / elapsed : 0;
+          
+          this.downloadProgress.progress = progress;
+          this.downloadProgress.loaded = loaded;
+          this.downloadProgress.speed = speed;
+        }
+        
+        // Create blob and download
+        const blob = new Blob(chunks);
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+        
+        this.showToast('File downloaded successfully', 'success');
+        
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          this.showToast('Download cancelled', 'error');
+        } else {
+          this.showToast('Failed to download file: ' + error.message, 'error');
+        }
+      } finally {
+        this.downloadProgress.show = false;
+        this.currentDownloadController = null;
+      }
     },
 
     async deleteFile(filename) {
@@ -800,6 +1078,70 @@ createApp({
             return 'text-muted';
         }
       }
+    },
+
+    formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+
+    formatSpeed(bytesPerSecond) {
+      return this.formatBytes(bytesPerSecond) + '/s';
+    },
+
+    formatTimeRemaining(remainingBytes, speed) {
+      if (speed === 0) return 'Calculating...';
+      const seconds = Math.round(remainingBytes / speed);
+      if (seconds < 60) return `${seconds}s left`;
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds}s left`;
+    },
+
+    handleMobileFileSelect(event) {
+      if (event.target.files.length > 0) {
+        const file = event.target.files[0];
+        this.showToast(`Selected: ${file.name} (${this.formatBytes(file.size)})`, 'success');
+      }
+    },
+
+    cancelUpload() {
+      if (this.currentUploadXHR) {
+        this.currentUploadXHR.abort();
+        this.currentUploadXHR = null;
+      }
+      this.uploadProgress.show = false;
+      this.showToast('Upload cancelled', 'error');
+    },
+
+    cancelDownload() {
+      if (this.currentDownloadController) {
+        this.currentDownloadController.abort();
+        this.currentDownloadController = null;
+      }
+      this.downloadProgress.show = false;
+      this.showToast('Download cancelled', 'error');
+    },
+
+    testProgress() {
+      // Test method to show progress overlay
+      this.uploadProgress = {
+        show: true,
+        progress: 45,
+        speed: 1024 * 1024 * 2.5, // 2.5 MB/s
+        fileName: 'test-file.pdf',
+        loaded: 4500000,
+        total: 10000000,
+        startTime: Date.now() - 5000
+      };
+      
+      // Auto hide after 3 seconds
+      setTimeout(() => {
+        this.uploadProgress.show = false;
+      }, 3000);
     }
   }
 }).mount('#app');

@@ -282,6 +282,39 @@
   </div>
 </div>
 
+<!-- Download Progress Modal -->
+<div v-show="downloadProgress.show" class="progress-overlay">
+  <div class="progress-card">
+    <div class="progress-header">
+      <div class="d-flex align-items-center flex-grow-1">
+        <i class="bi bi-cloud-download text-success me-2"></i>
+        <span class="fw-bold">Downloading</span>
+      </div>
+      <button @click="cancelDownload" class="btn btn-sm btn-outline-secondary ms-2" title="Cancel">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="progress-body">
+      <div class="mb-2">
+        <small class="text-muted d-block mb-1 text-truncate">{{ fileName }}</small>
+        <div class="progress mb-2" style="height: 10px; border-radius: 6px; background-color: #f8f9fa;">
+          <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+               style="border-radius: 6px;"
+               :style="{width: downloadProgress.progress + '%'}"></div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between small text-muted">
+        <span class="fw-medium">{{ downloadProgress.progress }}%</span>
+        <span>{{ formatSpeed(downloadProgress.speed) }}</span>
+      </div>
+      <div class="d-flex justify-content-between small text-muted mt-1">
+        <span>{{ formatBytes(downloadProgress.loaded) }} / {{ formatBytes(downloadProgress.total) }}</span>
+        <span v-if="downloadProgress.speed > 0">{{ formatTimeRemaining(downloadProgress.total - downloadProgress.loaded, downloadProgress.speed) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
 .audio-player-container {
   position: relative;
@@ -357,6 +390,57 @@ kbd {
   pointer-events: none;
 }
 
+/* Progress Overlay - Centered Modal Style */
+.progress-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+
+.progress-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 320px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+.progress-header {
+  padding: 0 0 16px 0;
+  border-bottom: 1px solid #f1f3f4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.progress-body {
+  padding: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
   .audio-waveform {
     height: 40px;
@@ -364,6 +448,10 @@ kbd {
   
   .wave-bar {
     width: 3px;
+  }
+  
+  .progress-card {
+    width: 280px;
   }
 }
 </style>
@@ -393,7 +481,16 @@ createApp({
       showKeyboardHelp: false,
       host: '[[host]]',
       port: [[port]],
-      webUI: [[webUI|lower]]
+      webUI: [[webUI|lower]],
+      downloadProgress: {
+        show: false,
+        progress: 0,
+        speed: 0,
+        loaded: 0,
+        total: 0,
+        startTime: null
+      },
+      currentDownloadController: null
     };
   },
   computed: {
@@ -427,8 +524,8 @@ createApp({
       this.mediaUrl = `http://${this.host}:${this.port}/bucket/file/${filePath}`;
       this.mediaType = this.getMediaType(this.fileExtension);
       
-      // Simulate file size (in a real app, you'd get this from the server)
-      this.fileSize = Math.random() * 10000000; // Random size for demo
+      // Fetch real file size from the server
+      this.fetchFileInfo(filePath);
     },
 
     setupKeyboardControls() {
@@ -668,9 +765,75 @@ createApp({
       }
     },
 
-    downloadMedia() {
-      if (!this.webUI) {
-        window.open(this.mediaUrl, '_blank');
+    async downloadMedia() {
+      if (this.webUI) return;
+      
+      // Initialize download progress
+      this.downloadProgress = {
+        show: true,
+        progress: 0,
+        speed: 0,
+        loaded: 0,
+        total: 0,
+        startTime: Date.now()
+      };
+      
+      try {
+        // Create AbortController for cancellation
+        this.currentDownloadController = new AbortController();
+        
+        // Fetch with progress tracking
+        const response = await fetch(this.mediaUrl, {
+          signal: this.currentDownloadController.signal
+        });
+        if (!response.ok) throw new Error('Download failed');
+        
+        const contentLength = response.headers.get('content-length');
+        const total = parseInt(contentLength, 10);
+        this.downloadProgress.total = total;
+        
+        const reader = response.body.getReader();
+        const chunks = [];
+        let loaded = 0;
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          chunks.push(value);
+          loaded += value.length;
+          
+          const progress = total > 0 ? Math.round((loaded / total) * 100) : 0;
+          const elapsed = (Date.now() - this.downloadProgress.startTime) / 1000;
+          const speed = elapsed > 0 ? loaded / elapsed : 0;
+          
+          this.downloadProgress.progress = progress;
+          this.downloadProgress.loaded = loaded;
+          this.downloadProgress.speed = speed;
+        }
+        
+        // Create blob and download
+        const blob = new Blob(chunks);
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = this.fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+        
+        this.showToast('File downloaded successfully', 'success');
+        
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          this.showToast('Download cancelled', 'error');
+        } else {
+          this.showToast('Failed to download file: ' + error.message, 'error');
+        }
+      } finally {
+        this.downloadProgress.show = false;
+        this.currentDownloadController = null;
       }
     },
 
@@ -710,6 +873,52 @@ createApp({
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(1024));
       return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+    },
+
+    formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+
+    formatSpeed(bytesPerSecond) {
+      return this.formatBytes(bytesPerSecond) + '/s';
+    },
+
+    formatTimeRemaining(remainingBytes, speed) {
+      if (speed === 0) return 'Calculating...';
+      const seconds = Math.round(remainingBytes / speed);
+      if (seconds < 60) return `${seconds}s left`;
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds}s left`;
+    },
+
+    cancelDownload() {
+      if (this.currentDownloadController) {
+        this.currentDownloadController.abort();
+        this.currentDownloadController = null;
+      }
+      this.downloadProgress.show = false;
+      this.showToast('Download cancelled', 'error');
+    },
+
+    async fetchFileInfo(filePath) {
+      try {
+        const response = await fetch(`http://${this.host}:${this.port}/bucket/info/${filePath}`);
+        if (response.ok) {
+          const fileInfo = await response.json();
+          this.fileSize = fileInfo.size || 0;
+        } else {
+          console.error('Failed to fetch file info:', response.statusText);
+          this.fileSize = 0;
+        }
+      } catch (error) {
+        console.error('Error fetching file info:', error);
+        this.fileSize = 0;
+      }
     }
   }
 }).mount('#mediaPlayer');
