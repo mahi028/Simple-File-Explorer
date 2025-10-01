@@ -17,9 +17,7 @@ def run_webui(webui_html):
 def run_backend():
     serve(app, host=HOST, port=PORT)
 
-if __name__ == "__main__":
-    freeze_support()
-
+def print_info():
     print(banner)
     print()
     print("-"*10+"OS INFORMATION"+"-"*10)
@@ -35,28 +33,38 @@ if __name__ == "__main__":
     print("Note: Closing the UI window doesn't stop the application.")
     print("Note: Press \"CTRL + C\" to terminate the app.")
 
-    with app.app_context():
-        webui_html = render_template("index.html", host=HOST, port=PORT, webUI=True)
+if __name__ == "__main__":
+    if sys.argv[-1] == "nogui":
+        print_info()
+        run_backend()
 
-    p1 = Process(target=run_webui, args=(webui_html,))
-    p2 = Process(target=run_backend)
+    else:
+        freeze_support()
+        print_info()
 
-    p1.start()
-    p2.start()
+        with app.app_context():
+            webui_html = render_template("index.html", host=HOST, port=PORT, webUI=True)
 
-    def shutdown(sig, frame):
-        print("\nShutting down gracefully...")
-        p1.terminate()
-        p2.terminate()
-        p1.join()
-        p2.join()
-        sys.exit(0)
+        p1 = Process(target=run_webui, args=(webui_html,))
+        p2 = Process(target=run_backend)
 
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
+        p1.start()
+        p2.start()
 
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        shutdown(None, None)
+        def shutdown(sig, frame):
+            print("\nShutting down gracefully...")
+            p1.terminate()
+            p2.terminate()
+            p1.join()
+            p2.join()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, shutdown)
+        signal.signal(signal.SIGTERM, shutdown)
+
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            shutdown(None, None)
+        
