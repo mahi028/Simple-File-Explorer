@@ -271,7 +271,6 @@ dependencies = [
     { name = "pyinstaller" },
     { name = "python-dotenv" },
     { name = "waitress" },
-    { name = "webui2" },
 ]
 
 [package.metadata]
@@ -283,7 +282,6 @@ requires-dist = [
     { name = "pyinstaller", specifier = ">=6.16.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
     { name = "waitress", specifier = ">=3.0.2" },
-    { name = "webui2", specifier = ">=2.5.6" },
 ]
 
 [[package]]
@@ -302,15 +300,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/bf/cb/04ddb054f45faa306a230769e868c28b8065ea196891f09004ebace5b184/waitress-3.0.2.tar.gz", hash = "sha256:682aaaf2af0c44ada4abfb70ded36393f0e307f4ab9456a215ce0020baefc31f", size = 179901 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/57/a27182528c90ef38d82b636a11f606b0cbb0e17588ed205435f8affe3368/waitress-3.0.2-py3-none-any.whl", hash = "sha256:c56d67fd6e87c2ee598b76abdd4e96cfad1f24cacdea5078d382b1f9d7b5ed2e", size = 56232 },
-]
-
-[[package]]
-name = "webui2"
-version = "2.5.6"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/14/3c/6c6a8889a44c456a4df2eb3b4f1c4ad9bcfacabc9d9eab37b5a7438e7feb/webui2-2.5.6.tar.gz", hash = "sha256:db0f578bd7e182b15cda3a9561a38b7f78774f52228848901c2e455c171b6b28", size = 884066 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/5e/401fa77465b27ed770a4092b03192ce31df760375bf1b950c8915020bd44/webui2-2.5.6-py3-none-any.whl", hash = "sha256:794e17a75cfd5e698e32c1e23ef9faea7a2f718e93c14b4d60ce1941b4a7414c", size = 886987 },
 ]
 
 [[package]]

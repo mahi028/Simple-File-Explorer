@@ -8,7 +8,7 @@ a = Analysis(
     datas=[
         ('templates', 'templates'), 
         ('assets', 'assets'),
-        ('.venv\\Lib\\site-packages\\webui', 'webui')
+        ('static', 'static'),
     ],
     hiddenimports=[],
     hookspath=[],
