@@ -27,7 +27,7 @@ CUSTOM_JINJA_DELIMS = {
     'comment_start_string': '{#',
     'comment_end_string': '#}'
 }
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__, template_folder='templates', static_folder='static')
 for k, v in CUSTOM_JINJA_DELIMS.items():
     setattr(app.jinja_env, k, v)
 
