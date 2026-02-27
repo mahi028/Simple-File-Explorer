@@ -1,10 +1,10 @@
 from waitress import serve
-from app import app, HOST, PORT
+from app import app, HOST, OPEN_HOST, PORT
 from assets.ascii_art import banner
 from api import os_info, os_type, user_directory, CONFIG_FILE
 
 def run_backend():
-    serve(app, host=HOST, port=PORT, threads=8, max_request_body_size=2**60 - 1)
+    serve(app, host=OPEN_HOST, port=PORT, threads=8, max_request_body_size=2**60 - 1)
 
 def print_info():
     print(banner)
