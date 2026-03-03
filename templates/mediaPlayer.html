@@ -397,8 +397,8 @@ createApp({
       videoWidth: 0,
       videoHeight: 0,
       showKeyboardHelp: false,
-      host: '[[host]]',
-      port: [[port]],
+      host: window.location.hostname,
+      port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
       webUI: [[webUI|lower]]
     };
   },

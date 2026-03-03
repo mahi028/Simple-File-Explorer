@@ -37,11 +37,11 @@ api.init_app(app)
 
 @app.route("/")
 def index():
-    return render_template("index.html", host = HOST, port = PORT, webUI = False)
+    return render_template("index.html", webUI = False)
 
 @app.route("/player")
 def media_player():
-    return render_template("mediaPlayer.html", host = HOST, port = PORT, webUI = False)
+    return render_template("mediaPlayer.html", webUI = False)
 
 @app.route("/health")
 def health():
